@@ -1,0 +1,19 @@
+{
+  "name": "twivido",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Download videos from X (Twitter) in one click — right from your feed.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "crx3": "^1.1.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/k41n/twivido.git"
+  }
+}

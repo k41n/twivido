@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# Signing keys must never be committed — stored as the CRX_KEY GitHub secret.
+*.pem
+
+.DS_Store
+*.log
