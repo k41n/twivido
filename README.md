@@ -39,7 +39,7 @@ Hover any media in a tweet — a **⬇** button appears in the corner. Click it,
 
 Twivido isn't on the Web Store yet — install it manually in ~30 seconds:
 
-1. Download **`twivido-<version>.zip`** from the [latest release](https://github.com/k41n/twivido/releases/latest) and unzip it.
+1. Download **[`twivido-latest.zip`](https://github.com/k41n/twivido/releases/download/latest/twivido-latest.zip)** (or grab it from the [latest release](https://github.com/k41n/twivido/releases/latest)) and unzip it.
 2. Open your browser's extensions page:
    - Arc / Chrome / Brave → `chrome://extensions`
    - Edge → `edge://extensions`

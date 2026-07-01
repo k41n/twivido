@@ -39,7 +39,23 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-      # Rolling "latest" release, refreshed on every push to main.
+      # Rolling "latest" release with stable filenames (permanent download URLs),
+      # refreshed on every push to main.
+      - name: Prepare rolling assets
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp "dist/twivido-${{ steps.v.outputs.version }}.zip" dist/twivido-latest.zip
+          cp "dist/twivido-${{ steps.v.outputs.version }}.crx" dist/twivido-latest.crx
+
+      - name: Clean previous latest assets
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for a in $(gh release view latest --json assets -q '.assets[].name' 2>/dev/null); do
+            gh release delete-asset latest "$a" -y || true
+          done
+
       - name: Publish rolling latest release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
@@ -48,12 +64,17 @@ jobs:
           name: Latest build (v${{ steps.v.outputs.version }})
           prerelease: false
           make_latest: true
-          files: dist/*
+          files: |
+            dist/twivido-latest.zip
+            dist/twivido-latest.crx
           body: |
             Automated build from `main` — v${{ steps.v.outputs.version }} (`${{ github.sha }}`).
 
-            - **`twivido-*.zip`** — unzip, then `chrome://extensions` → Developer mode → Load unpacked.
-            - **`twivido-*.crx`** — signed package.
+            - **`twivido-latest.zip`** — unzip, then `chrome://extensions` → Developer mode → Load unpacked.
+            - **`twivido-latest.crx`** — signed package.
+
+            Permanent links:
+            `https://github.com/k41n/twivido/releases/download/latest/twivido-latest.zip`
 
       # Permanent, versioned release when a v* tag is pushed.
       - name: Publish tagged release
