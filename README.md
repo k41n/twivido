@@ -30,14 +30,15 @@ tweet pages, everywhere. No ads, no trackers, no accounts, no external servers.
 Hover any media in a tweet — a **⬇** button appears in the corner. Click it, done.
 
 <div align="center">
-  <img src="docs/hero.png" alt="The download button sits in the corner of every video and image" width="640" />
+  <img src="docs/demo.gif" alt="Downloading a video from x.com with Twivido" width="360" />
 </div>
 
-> Got a nice screen recording? A short `docs/demo.gif` PR would be very welcome. 🙌
+<sub>Recorded on live x.com with the extension loaded — reproduce it yourself with `npm run demo`.</sub>
 
 ## Install
 
-Twivido isn't on the Web Store yet — install it manually in ~30 seconds:
+Twivido isn't on the Web Store yet (submission is set up — see
+[PUBLISHING.md](./PUBLISHING.md)). Install it manually in ~30 seconds:
 
 1. Download **[`twivido-latest.zip`](https://github.com/k41n/twivido/releases/download/latest/twivido-latest.zip)** (or grab it from the [latest release](https://github.com/k41n/twivido/releases/latest)) and unzip it.
 2. Open your browser's extensions page:
@@ -75,6 +76,13 @@ npm run build     # → dist/twivido-<version>.zip (+ .crx if a signing key is p
 The signing key is read from `$CRX_KEY` (PEM contents), `$CRX_KEY_PATH`, or
 `./signing-key.pem`. Releases are built automatically by GitHub Actions on every
 push to `main`.
+
+Regenerate the demo GIF (needs a Chromium for Playwright and `ffmpeg`):
+
+```bash
+npx playwright install chromium
+npm run demo      # loads the extension on a real tweet → docs/demo.gif
+```
 
 ## Contributing
 

@@ -1,0 +1,55 @@
+name: Publish to Chrome Web Store
+
+# Publishing requires a one-time setup (see PUBLISHING.md):
+#   - a Chrome Web Store developer account
+#   - repository secrets: CWS_EXTENSION_ID, CWS_CLIENT_ID,
+#     CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN
+# Trigger manually, or by pushing a version tag (e.g. v1.1.1).
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+      - name: Build store zip
+        run: npm run build
+
+      - name: Guard — secrets present
+        env:
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+        run: |
+          if [ -z "$CWS_EXTENSION_ID" ]; then
+            echo "::error::Chrome Web Store secrets are not configured. See PUBLISHING.md."
+            exit 1
+          fi
+
+      - name: Read version
+        id: v
+        run: echo "version=$(node -p "require('./src/manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload & publish
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          ZIP="dist/twivido-${{ steps.v.outputs.version }}.zip"
+          npx --yes chrome-webstore-upload-cli@3 upload --source "$ZIP" --auto-publish

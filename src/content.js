@@ -12,10 +12,36 @@
   const VIDEO_SELECTOR = '[data-testid="videoComponent"], [data-testid="videoPlayer"]';
   const PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
 
-  // Media kinds, in the order X lays them out inside a tweet.
+  /** Elements in `scope` sorted by their position in the document. */
+  function inDomOrder(elements) {
+    return [...elements].sort((a, b) =>
+      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+    );
+  }
+
+  /**
+   * Video "roots" in `scope`: known X containers, plus a fallback for bare
+   * <video> elements (X's markup varies — e.g. logged-out tweet pages don't use
+   * data-testid="videoComponent").
+   */
+  function videoRoots(scope) {
+    const set = new Set(scope.querySelectorAll(VIDEO_SELECTOR));
+    for (const v of scope.querySelectorAll("video")) {
+      if (!v.closest(VIDEO_SELECTOR)) set.add(v.parentElement || v);
+    }
+    return inDomOrder(set);
+  }
+
+  /** Image roots in `scope` (skip video posters). */
+  function photoRoots(scope) {
+    return inDomOrder(
+      [...scope.querySelectorAll(PHOTO_SELECTOR)].filter((c) => !c.closest(VIDEO_SELECTOR))
+    );
+  }
+
   const KINDS = [
-    { kind: "video", selector: VIDEO_SELECTOR, label: "Download video" },
-    { kind: "photo", selector: PHOTO_SELECTOR, label: "Download image" },
+    { kind: "video", roots: videoRoots, label: "Download video" },
+    { kind: "photo", roots: photoRoots, label: "Download image" },
   ];
 
   const DOWNLOAD_ICON =
@@ -42,12 +68,11 @@
     return location.pathname.match(/\/status\/(\d+)/)?.[1] || null;
   }
 
-  /** Index of this container among same-kind media of the same tweet. */
-  function indexFor(container, selector) {
-    const article = container.closest("article");
+  /** Index of this root among same-kind media of the same tweet. */
+  function indexFor(root, rootsOf) {
+    const article = root.closest("article");
     if (!article) return 0;
-    const all = [...article.querySelectorAll(selector)];
-    return Math.max(0, all.indexOf(container));
+    return Math.max(0, rootsOf(article).indexOf(root));
   }
 
   function buildButton(label) {
@@ -90,11 +115,11 @@
     }, revertMs);
   }
 
-  function onClick(container, btn, kind, selector, event) {
+  function onClick(root, btn, kind, rootsOf, event) {
     event.preventDefault();
     event.stopPropagation();
 
-    const tweetId = tweetIdFor(container);
+    const tweetId = tweetIdFor(root);
     if (!tweetId) {
       flash(btn, "?");
       return;
@@ -104,7 +129,7 @@
 
     try {
       chrome.runtime.sendMessage(
-        { type: "downloadMedia", tweetId, kind, index: indexFor(container, selector) },
+        { type: "downloadMedia", tweetId, kind, index: indexFor(root, rootsOf) },
         (resp) => {
           if (chrome.runtime.lastError || !resp) {
             flash(btn, "⚠");
@@ -122,27 +147,23 @@
     }
   }
 
-  /** Attach a button to a media container (idempotent). */
-  function attach(container, kind, selector, label) {
+  /** Attach a button to a media root (idempotent). */
+  function attach(root, kind, rootsOf, label) {
     // Only tweet media, not unrelated media elsewhere on X.
-    if (!container.closest("article") && !/\/status\/\d+/.test(location.pathname)) return;
-    if (container.querySelector(`:scope > .${BTN_CLASS}`)) return; // already there
+    if (!root.closest("article") && !/\/status\/\d+/.test(location.pathname)) return;
+    if (root.querySelector(`:scope > .${BTN_CLASS}`)) return; // already there
 
-    if (getComputedStyle(container).position === "static") {
-      container.style.position = "relative";
+    if (getComputedStyle(root).position === "static") {
+      root.style.position = "relative";
     }
     const btn = buildButton(label);
-    btn.addEventListener("click", (e) => onClick(container, btn, kind, selector, e));
-    container.appendChild(btn);
+    btn.addEventListener("click", (e) => onClick(root, btn, kind, rootsOf, e));
+    root.appendChild(btn);
   }
 
   function scan() {
-    for (const { kind, selector, label } of KINDS) {
-      document.querySelectorAll(selector).forEach((c) => {
-        // A photo container nested inside a video (poster) — skip; it's the video.
-        if (kind === "photo" && c.closest(VIDEO_SELECTOR)) return;
-        attach(c, kind, selector, label);
-      });
+    for (const { kind, roots, label } of KINDS) {
+      roots(document).forEach((r) => attach(r, kind, roots, label));
     }
   }
 

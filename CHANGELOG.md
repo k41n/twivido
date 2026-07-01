@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+- Fix: the download button now also appears where X renders a bare `<video>`
+  without its usual container (e.g. logged-out tweet pages), restoring the
+  fallback and making detection more robust across layouts.
+- Add a real, reproducible demo recording (`npm run demo` → `docs/demo.gif`).
+
 ## 1.1.0
 
 - **Images:** download button now appears on tweet images too, saved at original
