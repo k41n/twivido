@@ -1,5 +1,9 @@
 # Publishing Twivido to the Chrome Web Store
 
+> **Item ID:** `cjaejcemjmmaajgbijeghhjmobigocfi` ·
+> [store page](https://chromewebstore.google.com/detail/cjaejcemjmmaajgbijeghhjmobigocfi)
+> · already set as the `CWS_EXTENSION_ID` repo secret.
+
 This is a one-time setup. After it, `.github/workflows/publish.yml` publishes a
 new version automatically whenever you push a `vX.Y.Z` tag (or run the workflow
 manually). Everything that can be automated already is — the steps below are the
