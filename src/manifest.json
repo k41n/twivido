@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Twivido — X (Twitter) Video Downloader",
-  "version": "1.0.0",
-  "description": "Download videos from X (Twitter) in one click — right from your feed. Highest quality, with audio.",
+  "name": "Twivido — X (Twitter) Video & Image Downloader",
+  "version": "1.1.0",
+  "description": "Download videos, GIFs and images from X (Twitter) in one click — right from your feed. Highest quality, with audio.",
   "homepage_url": "https://github.com/k41n/twivido",
   "permissions": ["downloads"],
   "host_permissions": [

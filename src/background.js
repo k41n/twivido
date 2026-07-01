@@ -3,8 +3,9 @@
  *
  * X streams tweet videos as HLS with *separate* audio and video tracks, so a
  * single track downloaded on its own is either silent or picture-less. Instead
- * we resolve the tweet's progressive MP4 (audio + video muxed) from X's public
- * syndication endpoint by tweet ID, then hand the URL to the download manager.
+ * we resolve the tweet's progressive MP4 (audio + video muxed) — and its images —
+ * from X's public syndication endpoint by tweet ID, then hand the URL to the
+ * download manager. Animated GIFs are served by X as MP4, so they download too.
  */
 
 const SYNDICATION_ENDPOINT = "https://cdn.syndication.twimg.com/tweet-result";
@@ -21,18 +22,35 @@ function syndicationToken(id) {
 
 /** Make a value safe to use as a download filename. */
 function sanitize(name) {
-  return String(name || "x_video")
+  return String(name || "x_media")
     .replace(/[^\w.-]+/g, "_")
     .replace(/_+/g, "_")
     .slice(0, 80);
 }
 
+/** Request the original-resolution version of an X image URL. */
+function originalImageUrl(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set("name", "orig");
+    return u.href;
+  } catch {
+    return url;
+  }
+}
+
+/** File extension for an image URL (defaults to jpg). */
+function imageExt(url) {
+  const m = /[?&]format=(\w+)/.exec(url) || /\.(\w+)(?:\?|$)/.exec(url);
+  return (m?.[1] || "jpg").toLowerCase();
+}
+
 /**
- * Resolve downloadable MP4 URLs for a tweet.
+ * Resolve downloadable media for a tweet.
  * @param {string} tweetId
- * @returns {Promise<{author: string, videos: string[]}>}
+ * @returns {Promise<{author: string, videos: string[], photos: string[]}>}
  */
-async function getTweetVideos(tweetId) {
+async function getTweetMedia(tweetId) {
   if (!/^\d+$/.test(String(tweetId))) throw new Error("Invalid tweet id");
 
   const url =
@@ -57,7 +75,12 @@ async function getTweetVideos(tweetId) {
 
   const author = data?.user?.screen_name || "x";
   const videos = [];
+  const photos = [];
   for (const media of data?.mediaDetails || []) {
+    if (media?.type === "photo" && media.media_url_https) {
+      photos.push(media.media_url_https);
+      continue;
+    }
     const mp4s = (media?.video_info?.variants || []).filter(
       (v) => v.content_type === "video/mp4"
     );
@@ -65,39 +88,50 @@ async function getTweetVideos(tweetId) {
     mp4s.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
     videos.push(mp4s[0].url); // best bitrate
   }
-  if (!videos.length) throw new Error("This tweet has no downloadable video");
-  return { author, videos };
+  return { author, videos, photos };
 }
 
 /**
- * Download one video of a tweet.
+ * Download one media item of a tweet.
  * @param {string} tweetId
- * @param {number} [videoIndex=0]
+ * @param {"video"|"photo"} kind
+ * @param {number} [index=0]
  */
-async function downloadTweetVideo(tweetId, videoIndex = 0) {
-  const { author, videos } = await getTweetVideos(tweetId);
-  const idx = Math.min(Math.max(0, videoIndex | 0), videos.length - 1);
-  const suffix = videos.length > 1 ? `_${idx + 1}` : "";
-  const filename = `${sanitize(author)}_${tweetId}${suffix}.mp4`;
+async function downloadMedia(tweetId, kind, index = 0) {
+  const { author, videos, photos } = await getTweetMedia(tweetId);
+  const list = kind === "photo" ? photos : videos;
+  if (!list.length) {
+    throw new Error(
+      kind === "photo" ? "This tweet has no image" : "This tweet has no downloadable video"
+    );
+  }
+  const idx = Math.min(Math.max(0, index | 0), list.length - 1);
 
-  await chrome.downloads.download({
-    url: videos[idx],
-    filename,
-    conflictAction: "uniquify",
-  });
-  return { filename, count: videos.length };
+  let url, ext;
+  if (kind === "photo") {
+    url = originalImageUrl(list[idx]);
+    ext = imageExt(list[idx]);
+  } else {
+    url = list[idx];
+    ext = "mp4";
+  }
+  const suffix = list.length > 1 ? `_${idx + 1}` : "";
+  const filename = `${sanitize(author)}_${tweetId}${suffix}.${ext}`;
+
+  await chrome.downloads.download({ url, filename, conflictAction: "uniquify" });
+  return { filename };
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type === "downloadTweet") {
-    downloadTweetVideo(msg.tweetId, msg.videoIndex)
+  if (msg?.type === "downloadMedia") {
+    downloadMedia(msg.tweetId, msg.kind || "video", msg.index)
       .then((r) => sendResponse({ ok: true, ...r }))
       .catch((e) => sendResponse({ ok: false, error: String(e?.message || e) }));
     return true; // async response
   }
   if (msg?.type === "probeTweet") {
-    getTweetVideos(msg.tweetId)
-      .then((r) => sendResponse({ ok: true, count: r.videos.length }))
+    getTweetMedia(msg.tweetId)
+      .then((r) => sendResponse({ ok: true, videos: r.videos.length, photos: r.photos.length }))
       .catch((e) => sendResponse({ ok: false, error: String(e?.message || e) }));
     return true;
   }

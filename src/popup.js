@@ -40,7 +40,7 @@ function tweetIdFromUrl(url) {
       btn.disabled = true;
       btn.textContent = "Preparing…";
       chrome.runtime.sendMessage(
-        { type: "downloadTweet", tweetId, videoIndex: 0 },
+        { type: "downloadMedia", tweetId, kind: "video", index: 0 },
         (resp) => {
           if (resp?.ok) {
             btn.textContent = "✓ Download started";
@@ -61,10 +61,10 @@ function tweetIdFromUrl(url) {
 
   const hint = document.createElement("div");
   hint.innerHTML =
-    "<p>Hover any video and click the <b>⬇</b> button in its corner.</p>" +
+    "<p>Hover any <b>video</b>, <b>GIF</b> or <b>image</b> and click the <b>⬇</b> button in its corner.</p>" +
     "<ul>" +
-    "<li>Best available quality (audio + video).</li>" +
-    "<li>Saved as <i>author_id.mp4</i>.</li>" +
+    "<li>Video &amp; GIF in best quality (audio + video).</li>" +
+    "<li>Images at original resolution.</li>" +
     "<li>Works with public tweets.</li>" +
     "</ul>";
   root.appendChild(hint);

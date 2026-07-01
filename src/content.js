@@ -1,16 +1,22 @@
 /**
  * Twivido — content script.
  *
- * Adds a download button to every tweet video (in the timeline and on tweet
- * pages). The tweet ID is read from the tweet's permalink at click time, so it
- * stays correct even as X recycles DOM nodes while scrolling.
+ * Adds a download button to every tweet video and image (in the timeline and on
+ * tweet pages). The tweet ID is read from the tweet's permalink at click time,
+ * so it stays correct even as X recycles DOM nodes while scrolling.
  */
 (function () {
   "use strict";
 
   const BTN_CLASS = "twivido-btn";
-  const VIDEO_SELECTOR =
-    '[data-testid="videoComponent"], [data-testid="videoPlayer"]';
+  const VIDEO_SELECTOR = '[data-testid="videoComponent"], [data-testid="videoPlayer"]';
+  const PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
+
+  // Media kinds, in the order X lays them out inside a tweet.
+  const KINDS = [
+    { kind: "video", selector: VIDEO_SELECTOR, label: "Download video" },
+    { kind: "photo", selector: PHOTO_SELECTOR, label: "Download image" },
+  ];
 
   const DOWNLOAD_ICON =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
@@ -36,21 +42,21 @@
     return location.pathname.match(/\/status\/(\d+)/)?.[1] || null;
   }
 
-  /** Index of this video among the videos of the same tweet (multi-video tweets). */
-  function videoIndexFor(container) {
+  /** Index of this container among same-kind media of the same tweet. */
+  function indexFor(container, selector) {
     const article = container.closest("article");
     if (!article) return 0;
-    const all = [...article.querySelectorAll(VIDEO_SELECTOR)];
+    const all = [...article.querySelectorAll(selector)];
     return Math.max(0, all.indexOf(container));
   }
 
-  function buildButton() {
+  function buildButton(label) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = BTN_CLASS;
     btn.innerHTML = DOWNLOAD_ICON;
-    btn.title = "Download video";
-    btn.setAttribute("aria-label", "Download video");
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
     Object.assign(btn.style, {
       position: "absolute",
       top: "10px",
@@ -84,7 +90,7 @@
     }, revertMs);
   }
 
-  function onClick(container, btn, event) {
+  function onClick(container, btn, kind, selector, event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -98,13 +104,11 @@
 
     try {
       chrome.runtime.sendMessage(
-        { type: "downloadTweet", tweetId, videoIndex: videoIndexFor(container) },
+        { type: "downloadMedia", tweetId, kind, index: indexFor(container, selector) },
         (resp) => {
           if (chrome.runtime.lastError || !resp) {
             flash(btn, "⚠");
-            return;
-          }
-          if (resp.ok) {
+          } else if (resp.ok) {
             flash(btn, "✓");
           } else {
             flash(btn, "⚠");
@@ -118,28 +122,28 @@
     }
   }
 
-  /** Attach a button to a video container (idempotent). */
-  function attach(container) {
-    // Only attach to tweet videos, not unrelated <video> elements on X.
-    if (!container.closest("article") && !/\/status\/\d+/.test(location.pathname)) {
-      return;
-    }
+  /** Attach a button to a media container (idempotent). */
+  function attach(container, kind, selector, label) {
+    // Only tweet media, not unrelated media elsewhere on X.
+    if (!container.closest("article") && !/\/status\/\d+/.test(location.pathname)) return;
     if (container.querySelector(`:scope > .${BTN_CLASS}`)) return; // already there
 
     if (getComputedStyle(container).position === "static") {
       container.style.position = "relative";
     }
-    const btn = buildButton();
-    btn.addEventListener("click", (e) => onClick(container, btn, e));
+    const btn = buildButton(label);
+    btn.addEventListener("click", (e) => onClick(container, btn, kind, selector, e));
     container.appendChild(btn);
   }
 
   function scan() {
-    document.querySelectorAll(VIDEO_SELECTOR).forEach(attach);
-    // Fallback for the rare <video> not wrapped by a known container.
-    document.querySelectorAll("video").forEach((v) => {
-      if (!v.closest(VIDEO_SELECTOR) && v.parentElement) attach(v.parentElement);
-    });
+    for (const { kind, selector, label } of KINDS) {
+      document.querySelectorAll(selector).forEach((c) => {
+        // A photo container nested inside a video (poster) — skip; it's the video.
+        if (kind === "photo" && c.closest(VIDEO_SELECTOR)) return;
+        attach(c, kind, selector, label);
+      });
+    }
   }
 
   // Initial pass + observe the infinite timeline (debounced to once per frame).

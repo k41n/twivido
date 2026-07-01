@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- **Images:** download button now appears on tweet images too, saved at original
+  resolution.
+- **GIFs:** animated GIFs download as MP4 (X serves them that way).
+- Unified media handling (video / GIF / image) behind one button.
+
 ## 1.0.0
 
 First public release.

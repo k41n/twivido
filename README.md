@@ -1,8 +1,10 @@
 <div align="center">
 
+<img src="docs/hero.png" alt="Twivido — one-click downloader for X" width="820" />
+
 # Twivido
 
-**Download videos from X (Twitter) in one click — right from your feed.**
+**Download videos, GIFs and images from X (Twitter) in one click — right from your feed.**
 
 [![Release](https://github.com/k41n/twivido/actions/workflows/release.yml/badge.svg)](https://github.com/k41n/twivido/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -11,16 +13,27 @@
 </div>
 
 Twivido is a tiny, no-nonsense browser extension that adds a **⬇ download button**
-to every video on **x.com** / **twitter.com** — in the timeline, on tweet pages,
-everywhere. No ads, no trackers, no accounts, no external servers.
+to every video, GIF and image on **x.com** / **twitter.com** — in the timeline, on
+tweet pages, everywhere. No ads, no trackers, no accounts, no external servers.
 
 ## Features
 
 - **One click, from the feed** — no need to open the tweet separately.
-- **Highest quality, with audio** — always grabs the best MP4 (video **and** sound).
+- **Videos & GIFs in the best quality, with audio** — always grabs the best MP4 (video **and** sound).
+- **Images at original resolution** — full-size, not the compressed preview.
 - **Zero setup** — no login, no API keys, no paste-the-link boxes.
 - **Private** — everything runs locally in your browser; nothing is sent anywhere except X itself.
 - **Cross-browser** — works in **Arc**, Chrome, Edge, Brave and any Chromium browser.
+
+## Demo
+
+Hover any media in a tweet — a **⬇** button appears in the corner. Click it, done.
+
+<div align="center">
+  <img src="docs/hero.png" alt="The download button sits in the corner of every video and image" width="640" />
+</div>
+
+> Got a nice screen recording? A short `docs/demo.gif` PR would be very welcome. 🙌
 
 ## Install
 
@@ -42,8 +55,9 @@ That's it. Open X, hover any video, and click the **⬇** button in its corner.
 X streams tweet videos as HLS with **separate** audio and video tracks, so
 downloading a raw track gives you either silence or no picture. Instead, Twivido
 reads the tweet ID from the page and asks X's **public syndication endpoint** for
-the tweet's progressive **MP4 (audio + video muxed)**, then saves the highest
-bitrate via your browser's download manager. No transcoding, no third-party service.
+the tweet's progressive **MP4 (audio + video muxed)** — plus original-resolution
+image URLs — then saves them via your browser's download manager. GIFs are served
+by X as MP4, so they come through the same path. No transcoding, no third-party service.
 
 ## Limitations
 
