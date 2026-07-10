@@ -25,20 +25,29 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # Before npm ci / build: an unset secret should fail in seconds, and say
+      # which one, rather than surfacing later as a cryptic upload error.
+      - name: Guard — secrets present
+        env:
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          missing=""
+          for name in CWS_EXTENSION_ID CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing Chrome Web Store secret(s):$missing — see PUBLISHING.md."
+            exit 1
+          fi
+
       - run: npm ci
       - run: npm run check
 
       - name: Build store zip
         run: npm run build
-
-      - name: Guard — secrets present
-        env:
-          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-        run: |
-          if [ -z "$CWS_EXTENSION_ID" ]; then
-            echo "::error::Chrome Web Store secrets are not configured. See PUBLISHING.md."
-            exit 1
-          fi
 
       - name: Read version
         id: v
