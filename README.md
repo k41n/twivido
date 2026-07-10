@@ -6,6 +6,7 @@
 
 **Download videos, GIFs and images from X (Twitter) in one click — right from your feed.**
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/cjaejcemjmmaajgbijeghhjmobigocfi?label=Chrome%20Web%20Store&color=4285F4)](https://chromewebstore.google.com/detail/cjaejcemjmmaajgbijeghhjmobigocfi)
 [![Release](https://github.com/k41n/twivido/actions/workflows/release.yml/badge.svg)](https://github.com/k41n/twivido/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Latest build](https://img.shields.io/github/v/release/k41n/twivido?label=download)](https://github.com/k41n/twivido/releases/latest)
@@ -37,11 +38,18 @@ Hover any media in a tweet — a **⬇** button appears in the corner. Click it,
 
 ## Install
 
-**Chrome Web Store:** submitted and pending review —
-[store page](https://chromewebstore.google.com/detail/cjaejcemjmmaajgbijeghhjmobigocfi)
-(goes live once approved).
+<div align="center">
 
-Until then (or to run the latest build), install manually in ~30 seconds:
+### [**➜ Install from the Chrome Web Store**](https://chromewebstore.google.com/detail/cjaejcemjmmaajgbijeghhjmobigocfi)
+
+</div>
+
+Works in Chrome, Arc, Edge, Brave and any Chromium browser.
+
+<details>
+<summary><b>Or install manually from a release build</b> (~30 seconds)</summary>
+
+<br />
 
 1. Download **[`twivido-latest.zip`](https://github.com/k41n/twivido/releases/download/latest/twivido-latest.zip)** (or grab it from the [latest release](https://github.com/k41n/twivido/releases/latest)) and unzip it.
 2. Open your browser's extensions page:
@@ -50,9 +58,11 @@ Until then (or to run the latest build), install manually in ~30 seconds:
 3. Enable **Developer mode**.
 4. Click **Load unpacked** and select the unzipped folder.
 
-That's it. Open X, hover any video, and click the **⬇** button in its corner.
-
 > A signed `.crx` is also attached to each release for environments that support it.
+
+</details>
+
+That's it. Open X, hover any video, and click the **⬇** button in its corner.
 
 ## How it works
 
