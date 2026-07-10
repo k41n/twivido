@@ -11,6 +11,19 @@
   const BTN_CLASS = "twivido-btn";
   const VIDEO_SELECTOR = '[data-testid="videoComponent"], [data-testid="videoPlayer"]';
   const PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
+  // X renders some videos/GIFs as a photo *poster* with a play overlay and no
+  // <video>/videoComponent in the DOM yet. These markers identify such a poster.
+  const PLAY_SELECTOR =
+    '[data-testid="playButton"], [aria-label="Play"], [aria-label*="Embedded video" i], ' +
+    '[aria-label*="GIF" i], [aria-label*="Play" i]';
+
+  /** True when a `tweetPhoto` is actually a video/GIF preview, not a still image. */
+  function isVideoPoster(photo) {
+    if (photo.querySelector(PLAY_SELECTOR)) return true;
+    // The play control is sometimes a sibling inside the shared media wrapper.
+    const wrap = photo.parentElement;
+    return !!(wrap && wrap !== photo && wrap.querySelector(PLAY_SELECTOR));
+  }
 
   /** Elements in `scope` sorted by their position in the document. */
   function inDomOrder(elements) {
@@ -29,13 +42,19 @@
     for (const v of scope.querySelectorAll("video")) {
       if (!v.closest(VIDEO_SELECTOR)) set.add(v.parentElement || v);
     }
+    // Videos/GIFs that X renders as a photo poster (no <video> yet).
+    for (const p of scope.querySelectorAll(PHOTO_SELECTOR)) {
+      if (!p.closest(VIDEO_SELECTOR) && isVideoPoster(p)) set.add(p);
+    }
     return inDomOrder(set);
   }
 
-  /** Image roots in `scope` (skip video posters). */
+  /** Image roots in `scope` (skip video containers and video/GIF posters). */
   function photoRoots(scope) {
     return inDomOrder(
-      [...scope.querySelectorAll(PHOTO_SELECTOR)].filter((c) => !c.closest(VIDEO_SELECTOR))
+      [...scope.querySelectorAll(PHOTO_SELECTOR)].filter(
+        (c) => !c.closest(VIDEO_SELECTOR) && !isVideoPoster(c)
+      )
     );
   }
 

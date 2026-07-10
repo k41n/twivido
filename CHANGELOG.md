@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+- **Fix:** videos that X renders as a photo *poster* (a still frame with a play
+  overlay and no `<video>` element yet) were given an image button, so clicking
+  to download the video failed with "This tweet has no image". Such posters are
+  now detected as video/GIF and get the correct button.
+- Fallback: if the requested media kind isn't present but the other kind is, the
+  download now uses whatever media the tweet actually has instead of erroring.
+
 ## 1.1.1
 
 - Fix: the download button now also appears where X renders a bare `<video>`

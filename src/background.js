@@ -99,7 +99,19 @@ async function getTweetMedia(tweetId) {
  */
 async function downloadMedia(tweetId, kind, index = 0) {
   const { author, videos, photos } = await getTweetMedia(tweetId);
-  const list = kind === "photo" ? photos : videos;
+
+  // The content script infers kind from the DOM, which X sometimes renders
+  // ambiguously (a video/GIF shown as a photo poster). If the requested kind
+  // has no media but the other kind does, download what actually exists.
+  let effectiveKind = kind;
+  let list = kind === "photo" ? photos : videos;
+  if (!list.length) {
+    const other = kind === "photo" ? videos : photos;
+    if (other.length) {
+      effectiveKind = kind === "photo" ? "video" : "photo";
+      list = other;
+    }
+  }
   if (!list.length) {
     throw new Error(
       kind === "photo" ? "This tweet has no image" : "This tweet has no downloadable video"
@@ -108,7 +120,7 @@ async function downloadMedia(tweetId, kind, index = 0) {
   const idx = Math.min(Math.max(0, index | 0), list.length - 1);
 
   let url, ext;
-  if (kind === "photo") {
+  if (effectiveKind === "photo") {
     url = originalImageUrl(list[idx]);
     ext = imageExt(list[idx]);
   } else {
